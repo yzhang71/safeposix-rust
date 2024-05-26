@@ -153,6 +153,37 @@ macro_rules! check_and_dispatch_socketpair {
     };
 }
 
+pub extern "C" fn lind_syscall_api(
+    call_number: u32,
+    call_name: u64,
+    start_address: u64,
+    arg1: u64,
+    arg2: u64,
+    arg3: u64,
+    arg4: u64,
+    arg5: u64,
+    arg6: u64,
+) -> i32 {
+    match call_number {
+        WRITE_SYSCALL => {
+            let fd = arg1 as i32;
+            let buf = arg2 as *const u8;
+            let count = arg3 as usize;
+            interface::check_cageid(cageid);
+            unsafe {
+                CAGE_TABLE[cageid as usize]
+                    .as_ref()
+                    .unwrap()
+                    .write_syscall(fd, buf, count)
+            }
+        }
+
+        // Add more cases here for other known syscalls
+
+        _ => -1, // Return -1 for unknown syscalls
+    }
+}
+
 // the following "quick" functions are implemented for research purposes
 // to increase I/O performance by bypassing the dispatcher and type checker
 #[no_mangle]
