@@ -153,6 +153,23 @@ macro_rules! check_and_dispatch_socketpair {
     };
 }
 
+use std::ffi::CStr;
+use std::str::Utf8Error;
+
+fn u64_to_str(ptr: u64) -> Result<&'static str, Utf8Error> {
+    // Convert the u64 to a pointer to a C string (null-terminated)
+    let c_str = ptr as *const i8;
+
+    // Unsafe block to handle raw pointer and C string conversion
+    unsafe {
+        // Create a CStr from the raw pointer
+        let c_str = CStr::from_ptr(c_str);
+
+        // Convert the CStr to a Rust &str
+        c_str.to_str()
+    }
+}
+
 pub extern "C" fn lind_syscall_api(
     call_number: u32,
     call_name: u64,
@@ -164,10 +181,12 @@ pub extern "C" fn lind_syscall_api(
     arg5: u64,
     arg6: u64,
 ) -> i32 {
+    let cageid = 1;
+    let call_number = call_number as i32;
     match call_number {
         WRITE_SYSCALL => {
             let fd = arg1 as i32;
-            let buf = arg2 as *const u8;
+            let buf = (start_address + arg2) as *const u8;
             let count = arg3 as usize;
             interface::check_cageid(cageid);
             unsafe {
@@ -175,6 +194,61 @@ pub extern "C" fn lind_syscall_api(
                     .as_ref()
                     .unwrap()
                     .write_syscall(fd, buf, count)
+            }
+        }
+
+        READ_SYSCALL => {
+            let fd = arg1 as i32;
+            let buf = (start_address + arg2) as *mut u8;
+            let count = arg3 as usize;
+            interface::check_cageid(cageid);
+            unsafe {
+                CAGE_TABLE[cageid as usize]
+                    .as_ref()
+                    .unwrap()
+                    .read_syscall(fd, buf, count)
+            }
+        }
+
+        CLOSE_SYSCALL => {
+            let fd = arg1 as i32;
+            interface::check_cageid(cageid);
+            unsafe {
+                CAGE_TABLE[cageid as usize]
+                    .as_ref()
+                    .unwrap()
+                    .close_syscall(fd)
+            }
+        }
+
+        ACCESS_SYSCALL => {
+            let path = match u64_to_str(arg1) {
+                Ok(path_str) => path_str,
+                Err(_) => return -1, // Handle error appropriately, return an error code
+            };
+            let amode = arg2 as u32;
+            interface::check_cageid(cageid);
+            unsafe {
+                CAGE_TABLE[cageid as usize]
+                    .as_ref()
+                    .unwrap()
+                    .access_syscall(path, amode)
+            }
+        }
+
+        OPEN_SYSCALL => {
+            let path = match u64_to_str(arg1) {
+                Ok(path_str) => path_str,
+                Err(_) => return -1, // Handle error appropriately, return an error code
+            };
+            let flags = arg2 as i32;
+            let mode = arg3 as u32;
+            interface::check_cageid(cageid);
+            unsafe {
+                CAGE_TABLE[cageid as usize]
+                    .as_ref()
+                    .unwrap()
+                    .open_syscall(path, flags, mode)
             }
         }
 
