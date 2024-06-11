@@ -170,6 +170,7 @@ fn u64_to_str(ptr: u64) -> Result<&'static str, Utf8Error> {
     }
 }
 
+#[no_mangle]
 pub extern "C" fn lind_syscall_api(
     call_number: u32,
     call_name: u64,
@@ -194,6 +195,19 @@ pub extern "C" fn lind_syscall_api(
                     .as_ref()
                     .unwrap()
                     .write_syscall(fd, buf, count)
+            }
+        }
+
+        WRITEV_SYSCALL => {
+            let fd = arg1 as i32;
+            let iovec = (start_address + arg2) as *const interface::IovecStruct;
+            let iovcnt = arg3 as i32;
+            interface::check_cageid(cageid);
+            unsafe {
+                CAGE_TABLE[cageid as usize]
+                    .as_ref()
+                    .unwrap()
+                    .writev_syscall(fd, iovec, iovcnt)
             }
         }
 
