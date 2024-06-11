@@ -211,6 +211,18 @@ pub extern "C" fn lind_syscall_api(
             }
         }
 
+        MUNMAP_SYSCALL => {
+            let addr = (start_address + arg1) as *mut u8;
+            let len = arg2 as usize;
+            interface::check_cageid(cageid);
+            unsafe {
+                CAGE_TABLE[cageid as usize]
+                    .as_ref()
+                    .unwrap()
+                    .munmap_syscall(addr, len)
+            }
+        }
+
         READ_SYSCALL => {
             let fd = arg1 as i32;
             let buf = (start_address + arg2) as *mut u8;
