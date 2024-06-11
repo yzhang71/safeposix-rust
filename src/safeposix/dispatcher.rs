@@ -184,6 +184,18 @@ pub extern "C" fn lind_syscall_api(
 ) -> i32 {
     let cageid = 1;
     let call_number = call_number as i32;
+
+    // Print all the arguments
+    println!("call_number: {}", call_number);
+    println!("call_name: {}", call_name);
+    println!("start_address: {}", start_address);
+    println!("arg1: {}", arg1);
+    println!("arg2: {}", arg2);
+    println!("arg3: {}", arg3);
+    println!("arg4: {}", arg4);
+    println!("arg5: {}", arg5);
+    println!("arg6: {}", arg6);
+
     match call_number {
         WRITE_SYSCALL => {
             let fd = arg1 as i32;
