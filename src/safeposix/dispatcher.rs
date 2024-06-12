@@ -235,6 +235,36 @@ pub extern "C" fn lind_syscall_api(
             }
         }
 
+        MMAP_SYSCALL => {
+            let addr = (start_address + arg1) as *mut u8;
+            let len = arg2 as usize;
+            let prot = arg3 as i32;
+            let flags = arg4 as i32;
+            let fildes = arg5 as i32;
+            let off = arg6 as i64;
+            interface::check_cageid(cageid);
+            unsafe {
+                CAGE_TABLE[cageid as usize]
+                    .as_ref()
+                    .unwrap()
+                    .mmap_syscall(addr, len, prot, flags, fildes, off)
+            }
+        }
+
+        PREAD_SYSCALL => {
+            let fd = arg1 as i32;
+            let buf = (start_address + arg2) as *mut u8;
+            let count = arg3 as usize;
+            let offset = arg4 as isize;
+            interface::check_cageid(cageid);
+            unsafe {
+                CAGE_TABLE[cageid as usize]
+                    .as_ref()
+                    .unwrap()
+                    .pread_syscall(fd, buf, count, offset)
+            }
+        }
+
         READ_SYSCALL => {
             let fd = arg1 as i32;
             let buf = (start_address + arg2) as *mut u8;
