@@ -196,7 +196,7 @@ pub extern "C" fn lind_syscall_api(
     println!("arg5: {}", arg5);
     println!("arg6: {}", arg6);
 
-    match call_number {
+    let ret = match call_number {
         WRITE_SYSCALL => {
             let fd = arg1 as i32;
             let buf = (start_address + arg2) as *const u8;
@@ -323,7 +323,9 @@ pub extern "C" fn lind_syscall_api(
         // Add more cases here for other known syscalls
 
         _ => -1, // Return -1 for unknown syscalls
-    }
+    };
+    println!("Lind returns: {}", ret);
+    ret
 }
 
 // the following "quick" functions are implemented for research purposes
