@@ -120,6 +120,7 @@ use super::filesystem::{
 use super::net::NET_METADATA;
 use super::shm::SHM_METADATA;
 use super::syscalls::{fs_constants::IPC_STAT, sys_constants::*};
+use crate::interface::types::SockaddrDummy;
 use crate::interface;
 use crate::interface::errnos::*;
 use crate::lib_fs_utils::{lind_deltree, visit_children};
@@ -167,6 +168,26 @@ fn u64_to_str(ptr: u64) -> Result<&'static str, Utf8Error> {
 
         // Convert the CStr to a Rust &str
         c_str.to_str()
+    }
+}
+
+impl Arg {
+    pub fn from_u64_as_cbuf(value: u64) -> Self {
+        Arg {
+            dispatch_cbuf: value as *const u8,
+        }
+    }
+
+    pub fn from_u64_as_socklen_ptr(value: u64) -> Self {
+        Arg {
+            dispatch_socklen_t_ptr: value as *mut u32,
+        }
+    }
+
+    pub fn from_u64_as_sockaddrstruct(value: u64) -> Self {
+        Arg {
+            dispatch_constsockaddrstruct: value as *const SockaddrDummy,
+        }
     }
 }
 
@@ -317,6 +338,87 @@ pub extern "C" fn lind_syscall_api(
                     .as_ref()
                     .unwrap()
                     .open_syscall(path, flags, mode)
+            }
+        }
+
+        SOCKET_SYSCALL => {
+            let domain = arg1 as i32;
+            let socktype = arg2 as i32;
+            let protocol = arg3 as i32;
+            interface::check_cageid(cageid);
+            unsafe {
+                CAGE_TABLE[cageid as usize]
+                    .as_ref()
+                    .unwrap()
+                    .socket_syscall(domain, socktype, protocol)
+            }
+        }
+
+        CONNECT_SYSCALL => {
+            let fd = arg1 as i32;
+            let addrlen = arg3 as u32;
+            let addr = get_onearg!(interface::get_sockaddr(Arg::from_u64_as_sockaddrstruct(arg2), addrlen));
+            interface::check_cageid(cageid);
+            unsafe {
+                let remoteaddr = match Ok::<&interface::GenSockaddr, i32>(&addr) {
+                    Ok(addr) => addr,
+                    Err(_) => panic!("Failed to get sockaddr"), // Handle error appropriately
+                };
+                CAGE_TABLE[cageid as usize]
+                    .as_ref()
+                    .unwrap()
+                    .connect_syscall(fd, remoteaddr)
+            }
+        }
+
+        BIND_SYSCALL => {
+            let fd = arg1 as i32;
+            let addrlen = arg3 as u32;
+            let addr = get_onearg!(interface::get_sockaddr(Arg::from_u64_as_sockaddrstruct(arg2), addrlen));
+            interface::check_cageid(cageid);
+            unsafe {
+                let localaddr = match Ok::<&interface::GenSockaddr, i32>(&addr) {
+                    Ok(addr) => addr,
+                    Err(_) => panic!("Failed to get sockaddr"), // Handle error appropriately
+                };
+                CAGE_TABLE[cageid as usize]
+                    .as_ref()
+                    .unwrap()
+                    .bind_syscall(fd, localaddr)
+            }
+        }
+
+        ACCEPT_SYSCALL => {
+            let mut addr = interface::GenSockaddr::V4(interface::SockaddrV4::default()); //value doesn't matter
+            let nullity1 = interface::arg_nullity(&Arg::from_u64_as_cbuf(arg2));
+            let nullity2 = interface::arg_nullity(&Arg::from_u64_as_cbuf(arg3));
+
+            if nullity1 && nullity2 {
+                interface::check_cageid(cageid);
+                unsafe {
+                    CAGE_TABLE[cageid as usize]
+                        .as_ref()
+                        .unwrap()
+                        .accept_syscall(arg1 as i32, &mut addr)
+                }
+            } else if !(nullity1 || nullity2) {
+                interface::check_cageid(cageid);
+                let rv = unsafe {
+                    CAGE_TABLE[cageid as usize]
+                        .as_ref()
+                        .unwrap()
+                        .accept_syscall(arg1 as i32, &mut addr)
+                };
+                if rv >= 0 {
+                    interface::copy_out_sockaddr(Arg::from_u64_as_sockaddrstruct(arg2), Arg::from_u64_as_socklen_ptr(arg3), addr);
+                }
+                rv
+            } else {
+                syscall_error(
+                    Errno::EINVAL,
+                    "accept",
+                    "exactly one of the last two arguments was zero",
+                )
             }
         }
 
