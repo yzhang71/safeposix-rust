@@ -121,7 +121,7 @@ use super::net::NET_METADATA;
 use super::shm::SHM_METADATA;
 use super::syscalls::{fs_constants::IPC_STAT, sys_constants::*};
 use crate::interface::types::SockaddrDummy;
-use crate::interface;
+use crate::interface::{self, SigactionStruct};
 use crate::interface::errnos::*;
 use crate::lib_fs_utils::{lind_deltree, visit_children};
 
@@ -187,6 +187,16 @@ impl Arg {
     pub fn from_u64_as_sockaddrstruct(value: u64) -> Self {
         Arg {
             dispatch_constsockaddrstruct: value as *const SockaddrDummy,
+        }
+    }
+    pub fn from_u64_as_constsigactionstruct(value: u64) -> Self {
+        Arg {
+            dispatch_constsigactionstruct: value as *const SigactionStruct,
+        }
+    }
+    pub fn from_u64_as_sigactionstruct(value: u64) -> Self {
+        Arg {
+            dispatch_sigactionstruct: value as *mut SigactionStruct,
         }
     }
 }
@@ -296,6 +306,27 @@ pub extern "C" fn lind_syscall_api(
                     .as_ref()
                     .unwrap()
                     .read_syscall(fd, buf, count)
+            }
+        }
+
+        SIGACTION_SYSCALL => {
+            let sig = arg1 as i32;
+            let act = match interface::get_constsigactionstruct(Arg::from_u64_as_constsigactionstruct(arg2)) {
+                Ok(res_act) => res_act,
+                Err(_) => return -1, // Handle error appropriately, return an error code
+            };
+
+            let oact = match interface::get_sigactionstruct(Arg::from_u64_as_sigactionstruct(arg3)) {
+                Ok(res_oact) => res_oact,
+                Err(_) => return -1, // Handle error appropriately, return an error code
+            };
+            
+            interface::check_cageid(cageid);
+            unsafe {
+                CAGE_TABLE[cageid as usize]
+                    .as_ref()
+                    .unwrap()
+                    .sigaction_syscall(sig, act, oact)
             }
         }
 
