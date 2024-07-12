@@ -3644,4 +3644,14 @@ impl Cage {
         }
         return 0;
     }
+
+    // We're directly patching in the libc futex call for experimentation with lind-wasm
+    // this should allow us to use the nptl data structures such as mutexes and condvars directly
+    // as opposed to lind-nacl's individual implementations
+    //
+    // to perform this we just directly pass futex's var args as unsigned 32 bit integers to syscall() with SYS_futex
+    pub fn futex_syscall(&self, uaddr: u32, futex_op: u32, val: u32, val2: u32, uaddr2: u32, val3: u32) -> i32 { 
+        interface::libc_futex(uaddr, futex_op, val, val2, uaddr2, val3)
+    }
+
 }

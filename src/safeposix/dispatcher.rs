@@ -84,6 +84,7 @@ const SEM_TIMEDWAIT_SYSCALL: i32 = 94;
 const SEM_POST_SYSCALL: i32 = 95;
 const SEM_DESTROY_SYSCALL: i32 = 96;
 const SEM_GETVALUE_SYSCALL: i32 = 97;
+const FUTEX_SYSCALL: i32 = 98;
 
 const GETHOSTNAME_SYSCALL: i32 = 125;
 const PREAD_SYSCALL: i32 = 126;
@@ -111,6 +112,7 @@ const FDATASYNC_SYSCALL: i32 = 163;
 const SYNC_FILE_RANGE: i32 = 164;
 
 const WRITEV_SYSCALL: i32 = 170;
+
 
 use super::cage::*;
 use super::filesystem::{
@@ -931,6 +933,17 @@ pub extern "C" fn dispatcher(
                 interface::get_iovecstruct(arg2),
                 interface::get_int(arg3)
             )
+        }
+        FUTEX_SYSCALL => {
+            check_and_dispatch!(
+                cage.futex_syscall,
+                interface::get_uint(arg1),
+                interface::get_uint(arg2),
+                interface::get_uint(arg3),
+                interface::get_uint(arg4),
+                interface::get_uint(arg5),
+                interface::get_uint(arg6)
+            ) 
         }
         _ => {
             //unknown syscall
