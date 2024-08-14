@@ -217,15 +217,15 @@ pub extern "C" fn lind_syscall_api(
     let call_number = call_number as i32;
 
     // Print all the arguments
-    println!("call_number: {}", call_number);
-    println!("call_name: {}", call_name);
-    println!("start_address: {}", start_address);
-    println!("arg1: {}", arg1);
-    println!("arg2: {}", arg2);
-    println!("arg3: {}", arg3);
-    println!("arg4: {}", arg4);
-    println!("arg5: {}", arg5);
-    println!("arg6: {}", arg6);
+    // println!("call_number: {}", call_number);
+    // println!("call_name: {}", call_name);
+    // println!("start_address: {}", start_address);
+    // println!("arg1: {}", arg1);
+    // println!("arg2: {}", arg2);
+    // println!("arg3: {}", arg3);
+    // println!("arg4: {}", arg4);
+    // println!("arg5: {}", arg5);
+    // println!("arg6: {}", arg6);
 
     let ret = match call_number {
         WRITE_SYSCALL => {
@@ -453,11 +453,11 @@ pub extern "C" fn lind_syscall_api(
             }
         }
 
-        // Add more cases here for other known syscalls
+    
 
         _ => -1, // Return -1 for unknown syscalls
     };
-    println!("Lind returns: {}", ret);
+    // println!("Lind returns: {}", ret);
     ret
 }
 
