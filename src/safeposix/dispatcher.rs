@@ -219,7 +219,7 @@ pub extern "C" fn lind_syscall_api(
     let call_number = call_number as i32;
 
     // Print all the arguments
-    println!("call_number: {}", call_number);
+    // println!("call_number: {}", call_number);
     // println!("call_name: {}", call_name);
     // println!("start_address: {}", start_address);
     // println!("arg1: {}", arg1);
@@ -233,10 +233,6 @@ pub extern "C" fn lind_syscall_api(
         WRITE_SYSCALL => {
             let fd = arg1 as i32;
             let buf = (start_address + arg2) as *const u8;
-            // let tmp = buf as *const u8;
-            // println!("start_address: {}, arg2: {}", start_address, arg2);
-            // println!("try to dereference {}", buf as u64);
-            // unsafe { println!("*buf: {}", *buf); }
             let count = arg3 as usize;
             interface::check_cageid(cageid);
             unsafe {
@@ -461,11 +457,6 @@ pub extern "C" fn lind_syscall_api(
 
         FUTEX_SYSCALL => {
             let uaddr = (start_address + arg1) as u64;
-            // println!("start_address: {}, arg1: {}", start_address, arg1);
-            // let tmp = uaddr as *const u32;
-            // println!("try to dereference {}", tmp as u64);
-            // unsafe { println!("*uaddr: {}", *tmp); }
-            // let uaddr = arg1 as u32;
             let futex_op = arg2 as u32;
             let val = arg3 as u32;
             let timeout = arg4 as u32;
@@ -481,11 +472,9 @@ pub extern "C" fn lind_syscall_api(
             }
         }
 
-    
-
         _ => -1, // Return -1 for unknown syscalls
     };
-    println!("Lind returns: {}", ret);
+    // println!("Lind returns: {}", ret);
     ret
 }
 

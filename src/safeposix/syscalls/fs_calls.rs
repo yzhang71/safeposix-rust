@@ -3936,9 +3936,7 @@ impl Cage {
     //
     // to perform this we just directly pass futex's var args as unsigned 32 bit integers to syscall() with SYS_futex
     pub fn futex_syscall(&self, uaddr: u64, futex_op: u32, val: u32, val2: u32, uaddr2: u32, val3: u32) -> i32 { 
-        println!("calling libc_futex");
         let retval = interface::libc_futex(uaddr, futex_op, val, val2, uaddr2, val3);
-        println!("libc_futex returns: {}", retval);
         return retval;
     }
 
