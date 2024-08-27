@@ -344,7 +344,7 @@ pub extern "C" fn lind_syscall_api(
         }
 
         ACCESS_SYSCALL => {
-            let path = match u64_to_str(arg1) {
+            let path = match u64_to_str(start_address + arg1) {
                 Ok(path_str) => path_str,
                 Err(_) => return -1, // Handle error appropriately, return an error code
             };
