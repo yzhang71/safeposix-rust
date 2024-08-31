@@ -194,18 +194,18 @@ impl Cage {
         let newsigset = interface::RustHashMap::new();
         if !interface::RUSTPOSIX_TESTSUITE.load(interface::RustAtomicOrdering::Relaxed) {
             // we don't add these for the test suite
-            let mainsigsetatomic = self
-                .sigset
-                .get(
-                    &self
-                        .main_threadid
-                        .load(interface::RustAtomicOrdering::Relaxed),
-                )
-                .unwrap();
-            let mainsigset = interface::RustAtomicU64::new(
-                mainsigsetatomic.load(interface::RustAtomicOrdering::Relaxed),
-            );
-            newsigset.insert(0, mainsigset);
+            // let mainsigsetatomic = self
+            //     .sigset
+            //     .get(
+            //         &self
+            //             .main_threadid
+            //             .load(interface::RustAtomicOrdering::Relaxed),
+            //     )
+            //     .unwrap();
+            // let mainsigset = interface::RustAtomicU64::new(
+            //     mainsigsetatomic.load(interface::RustAtomicOrdering::Relaxed),
+            // );
+            // newsigset.insert(0, mainsigset);
         }
 
         /*

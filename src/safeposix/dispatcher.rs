@@ -205,6 +205,7 @@ impl Arg {
 
 #[no_mangle]
 pub extern "C" fn lind_syscall_api(
+    cageid: u64,
     call_number: u32,
     call_name: u64,
     start_address: u64,
@@ -215,7 +216,7 @@ pub extern "C" fn lind_syscall_api(
     arg5: u64,
     arg6: u64,
 ) -> i32 {
-    let cageid = 1;
+    // let cageid = 1;
     let call_number = call_number as i32;
 
     // Print all the arguments
@@ -455,6 +456,17 @@ pub extern "C" fn lind_syscall_api(
             }
         }
 
+        FORK_SYSCALL => {
+            let id = arg1 as u64;
+            interface::check_cageid(cageid);
+            unsafe {
+                CAGE_TABLE[cageid as usize]
+                    .as_ref()
+                    .unwrap()
+                    .fork_syscall(id)
+            }
+        }
+
         FUTEX_SYSCALL => {
             let uaddr = (start_address + arg1) as u64;
             let futex_op = arg2 as u32;
@@ -474,6 +486,7 @@ pub extern "C" fn lind_syscall_api(
 
         _ => -1, // Return -1 for unknown syscalls
     };
+    
     // println!("Lind returns: {}", ret);
     ret
 }
