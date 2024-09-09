@@ -225,6 +225,8 @@ impl Cage {
             cageid: child_cageid,
             cwd: interface::RustLock::new(self.cwd.read().clone()),
             parent: self.cageid,
+            childs: interface::RustLock::new(Vec::new()),
+            status: interface::RustLock::new(CageStatus::Running),
             filedescriptortable: newfdtable,
             cancelstatus: interface::RustAtomicBool::new(false),
             // This happens because self.getgid tries to copy atomic value which does not implement "Copy" trait; self.getgid.load returns i32.
@@ -264,14 +266,18 @@ impl Cage {
         }
         interface::cagetable_insert(child_cageid, cageobj);
 
+        self.childs.write().push(child_cageid);
+
         0
     }
 
     pub fn exec_syscall(&self, child_cageid: u64) -> i32 {
+        println!("exec syscall {} -> {}", self.cageid, child_cageid);
         interface::cagetable_remove(self.cageid);
 
         self.unmap_shm_mappings();
 
+        println!("exec syscall: cloexecvec");
         let mut cloexecvec = vec![];
         for fd in 0..MAXFD {
             let checkedfd = self.get_filedescriptor(fd).unwrap();
@@ -290,6 +296,7 @@ impl Cage {
             }
         }
 
+        println!("exec syscall: close");
         for fdnum in cloexecvec {
             self.close_syscall(fdnum);
         }
@@ -299,24 +306,26 @@ impl Cage {
         let newsigset = interface::RustHashMap::new();
         if !interface::RUSTPOSIX_TESTSUITE.load(interface::RustAtomicOrdering::Relaxed) {
             // we don't add these for the test suite
-            let mainsigsetatomic = self
-                .sigset
-                .get(
-                    &self
-                        .main_threadid
-                        .load(interface::RustAtomicOrdering::Relaxed),
-                )
-                .unwrap();
-            let mainsigset = interface::RustAtomicU64::new(
-                mainsigsetatomic.load(interface::RustAtomicOrdering::Relaxed),
-            );
-            newsigset.insert(0, mainsigset);
+            // let mainsigsetatomic = self
+            //     .sigset
+            //     .get(
+            //         &self
+            //             .main_threadid
+            //             .load(interface::RustAtomicOrdering::Relaxed),
+            //     )
+            //     .unwrap();
+            // let mainsigset = interface::RustAtomicU64::new(
+            //     mainsigsetatomic.load(interface::RustAtomicOrdering::Relaxed),
+            // );
+            // newsigset.insert(0, mainsigset);
         }
 
         let newcage = Cage {
             cageid: child_cageid,
             cwd: interface::RustLock::new(self.cwd.read().clone()),
             parent: self.parent,
+            childs: interface::RustLock::new(self.childs.read().clone()),
+            status: interface::RustLock::new(CageStatus::Running),
             filedescriptortable: self.filedescriptortable.clone(),
             cancelstatus: interface::RustAtomicBool::new(false),
             getgid: interface::RustAtomicI32::new(-1),
@@ -355,19 +364,103 @@ impl Cage {
         let cwd_container = self.cwd.read();
         decref_dir(&*cwd_container);
 
+        // parents exit, we should clean up all the exited children
+        // TO-DO: children that hasn't exited before parent exited would become a zombie
+        // and nobody is going to clean it
+        let childs = &*self.childs.read();
+        if childs.len() > 0 {
+            for &child_cageid in childs.iter() {
+                let child_cage = interface::cagetable_getref(child_cageid);
+                let status = &*child_cage.status.read();
+                match status {
+                    CageStatus::Zombie(_) => {
+                        // we do not care about the child exit status here
+                        // just remove the cage from the cagetable
+                        interface::cagetable_remove(child_cageid);
+                    }
+                    _ => {}
+                }
+            }
+        }
+
         //may not be removable in case of lindrustfinalize, we don't unwrap the remove result
-        interface::cagetable_remove(self.cageid);
+        match interface::cagetable_getref_opt(self.parent) {
+            Some(_) => {
+                // if parent is still alive, then we will let parent do the clean up
+                // unless the parent is the cage itself
+                if self.parent == self.cageid {
+                    interface::cagetable_remove(self.cageid);
+                }
+            },
+            None => {
+                // if parent already exited, then we do the clean up manually
+                interface::cagetable_remove(self.cageid);
+            }
+        }
+        
+        let mut status_guard = self.status.write();
+        *status_guard = CageStatus::Zombie(status);
 
         // Trigger SIGCHLD
         if !interface::RUSTPOSIX_TESTSUITE.load(interface::RustAtomicOrdering::Relaxed) {
             // dont trigger SIGCHLD for test suite
-            if self.cageid != self.parent {
-                interface::lind_kill_from_id(self.parent, SIGCHLD);
-            }
+            // if self.cageid != self.parent {
+            //     interface::lind_kill_from_id(self.parent, SIGCHLD);
+            // }
         }
 
         //fdtable will be dropped at end of dispatcher scope because of Arc
         status
+    }
+
+    pub fn wait_syscall(&self, status: &mut i32) -> i32 {
+        let mut children = &mut *self.childs.write();
+        let mut pid = 0;
+
+        if children.len() == 0 {
+            return syscall_error(Errno::ECHILD, "wait", "the cage has no child");
+        }
+
+        // we use busy wait here
+        // TO-DO: might want to switch to a better notify method in the future
+        loop {
+            let mut index = 0;
+            let mut found = false;
+            while index < children.len() {
+                let &child_cageid = children.get(index).unwrap();
+                // iterate through each child and check its status
+                let child_cage = interface::cagetable_getref(child_cageid);
+                let child_status = &*child_cage.status.read();
+                // let child_status = child_status.clone();
+                match child_status {
+                    CageStatus::Zombie(exit_code) => {
+                        // found an exited child
+                        // first we store the exited child cageid and exit code, which are
+                        // the return value of wait_syscall
+                        pid = child_cage.cageid;
+                        *status = *exit_code;
+                        // then we want to clean up the child cage
+                        interface::cagetable_remove(child_cageid);
+                        // finally we want to remove the cage from children table
+                        children.remove(index);
+                        found = true;
+                        break;
+                    },
+                    _ => {}
+                }
+                index += 1;
+            }
+
+            if found { break; }
+
+            // no child exited yet, yield before next attempt
+            if interface::sigcheck() {
+                return syscall_error(Errno::EINTR, "wait", "interrupted function call");
+            }
+            interface::lind_yield();
+        }
+
+        pid as i32
     }
 
     pub fn getpid_syscall(&self) -> i32 {

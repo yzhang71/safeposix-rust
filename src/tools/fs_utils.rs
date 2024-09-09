@@ -122,6 +122,8 @@ fn main() {
         cageid: 0,
         cwd: interface::RustLock::new(interface::RustRfc::new(interface::RustPathBuf::from("/"))),
         parent: 0,
+        childs: interface::RustLock::new(Vec::new()),
+        status: interface::RustLock::new(CageStatus::Running),
         filedescriptortable: init_fdtable(),
         cancelstatus: interface::RustAtomicBool::new(false),
         getgid: interface::RustAtomicI32::new(-1),

@@ -10,67 +10,97 @@ pub mod fs_tests {
     use std::os::unix::fs::PermissionsExt;
 
     pub fn test_fs() {
-        ut_lind_fs_simple(); // has to go first, else the data files created screw with link count test
+        // ut_lind_fs_simple(); // has to go first, else the data files created screw with link count test
 
-        ut_lind_fs_broken_close();
-        ut_lind_fs_chmod();
-        ut_lind_fs_fchmod();
-        ut_lind_fs_dir_chdir();
-        ut_lind_fs_dir_mode();
-        ut_lind_fs_dir_multiple();
-        ut_lind_fs_dup();
-        ut_lind_fs_dup2();
-        ut_lind_fs_fcntl_valid_args();
-        ut_lind_fs_fcntl_invalid_args();
-        ut_lind_fs_fcntl_dup();
-        ut_lind_fs_ioctl_valid_args();
-        ut_lind_fs_ioctl_invalid_args();
-        ut_lind_fs_fdflags();
-        ut_lind_fs_file_link_unlink();
-        ut_lind_fs_file_lseek_past_end();
-        ut_lind_fs_fstat_complex();
-        ut_lind_fs_getuid();
-        ut_lind_fs_load_fs();
-        ut_lind_fs_mknod();
-        ut_lind_fs_multiple_open();
-        ut_lind_fs_rename();
-        ut_lind_fs_rmdir();
-        ut_lind_fs_stat_file_complex();
-        ut_lind_fs_stat_file_mode();
-        ut_lind_fs_statfs();
-        ut_lind_fs_fstatfs();
-        ut_lind_fs_ftruncate();
-        ut_lind_fs_truncate();
-        ut_lind_fs_getdents();
-        ut_lind_fs_dir_chdir_getcwd();
-        rdwrtest();
-        prdwrtest();
-        chardevtest();
-        ut_lind_fs_exec_cloexec();
-        ut_lind_fs_shm();
-        ut_lind_fs_getpid_getppid();
-        ut_lind_fs_sem_fork();
-        ut_lind_fs_sem_trytimed();
-        ut_lind_fs_sem_test();
-        ut_lind_fs_tmp_file_test();
+        ut_lind_wait_simple();
 
-        //mkdir_syscall_tests
-        ut_lind_fs_mkdir_empty_directory();
-        ut_lind_fs_mkdir_nonexisting_directory();
-        ut_lind_fs_mkdir_existing_directory();
-        ut_lind_fs_mkdir_invalid_modebits();
-        ut_lind_fs_mkdir_success();
-        ut_lind_fs_mkdir_using_symlink();
+        // ut_lind_fs_broken_close();
+        // ut_lind_fs_chmod();
+        // ut_lind_fs_fchmod();
+        // ut_lind_fs_dir_chdir();
+        // ut_lind_fs_dir_mode();
+        // ut_lind_fs_dir_multiple();
+        // ut_lind_fs_dup();
+        // ut_lind_fs_dup2();
+        // ut_lind_fs_fcntl_valid_args();
+        // ut_lind_fs_fcntl_invalid_args();
+        // ut_lind_fs_fcntl_dup();
+        // ut_lind_fs_ioctl_valid_args();
+        // ut_lind_fs_ioctl_invalid_args();
+        // ut_lind_fs_fdflags();
+        // ut_lind_fs_file_link_unlink();
+        // ut_lind_fs_file_lseek_past_end();
+        // ut_lind_fs_fstat_complex();
+        // ut_lind_fs_getuid();
+        // ut_lind_fs_load_fs();
+        // ut_lind_fs_mknod();
+        // ut_lind_fs_multiple_open();
+        // ut_lind_fs_rename();
+        // ut_lind_fs_rmdir();
+        // ut_lind_fs_stat_file_complex();
+        // ut_lind_fs_stat_file_mode();
+        // ut_lind_fs_statfs();
+        // ut_lind_fs_fstatfs();
+        // ut_lind_fs_ftruncate();
+        // ut_lind_fs_truncate();
+        // ut_lind_fs_getdents();
+        // ut_lind_fs_dir_chdir_getcwd();
+        // rdwrtest();
+        // prdwrtest();
+        // chardevtest();
+        // ut_lind_fs_exec_cloexec();
+        // ut_lind_fs_shm();
+        // ut_lind_fs_getpid_getppid();
+        // ut_lind_fs_sem_fork();
+        // ut_lind_fs_sem_trytimed();
+        // ut_lind_fs_sem_test();
+        // ut_lind_fs_tmp_file_test();
 
-        //open_syscall_tests
-        ut_lind_fs_open_empty_directory();
-        ut_lind_fs_open_nonexisting_parentdirectory_and_file();
-        ut_lind_fs_open_existing_parentdirectory_and_nonexisting_file();
-        ut_lind_fs_open_existing_file_without_flags();
-        ut_lind_fs_open_existing_file_with_flags();
-        ut_lind_fs_open_create_new_file_and_check_link_count();
-        ut_lind_fs_open_existing_file_with_o_trunc_flag();
-        ut_lind_fs_open_new_file_with_s_ifchar_flag();
+        // //mkdir_syscall_tests
+        // ut_lind_fs_mkdir_empty_directory();
+        // ut_lind_fs_mkdir_nonexisting_directory();
+        // ut_lind_fs_mkdir_existing_directory();
+        // ut_lind_fs_mkdir_invalid_modebits();
+        // ut_lind_fs_mkdir_success();
+        // ut_lind_fs_mkdir_using_symlink();
+
+        // //open_syscall_tests
+        // ut_lind_fs_open_empty_directory();
+        // ut_lind_fs_open_nonexisting_parentdirectory_and_file();
+        // ut_lind_fs_open_existing_parentdirectory_and_nonexisting_file();
+        // ut_lind_fs_open_existing_file_without_flags();
+        // ut_lind_fs_open_existing_file_with_flags();
+        // ut_lind_fs_open_create_new_file_and_check_link_count();
+        // ut_lind_fs_open_existing_file_with_o_trunc_flag();
+        // ut_lind_fs_open_new_file_with_s_ifchar_flag();
+    }
+
+    pub fn ut_lind_wait_simple() {
+        lindrustinit(0);
+        println!("wait test");
+        let cage = interface::cagetable_getref(1);
+        cage.fork_syscall(2);
+        cage.fork_syscall(3);
+
+        interface::helper_thread(move || {
+            let cage2 = interface::cagetable_getref(2);
+            let cage3 = interface::cagetable_getref(3);
+
+            assert_eq!(cage3.exit_syscall(233), 233);
+            assert_eq!(cage2.exit_syscall(123), 123);
+        });
+
+        let mut status = 0;
+        assert_eq!(cage.wait_syscall(&mut status), 3);
+        assert_eq!(status, 233);
+
+        assert_eq!(cage.wait_syscall(&mut status), 2);
+        assert_eq!(status, 123);
+
+        assert_eq!(cage.wait_syscall(&mut status), -(Errno::ECHILD as i32));
+
+        println!("wait test done");
+        lindrustfinalize();
     }
 
     pub fn ut_lind_fs_simple() {

@@ -24,6 +24,12 @@ pub enum FileDescriptor {
 }
 
 #[derive(Debug, Clone)]
+pub enum CageStatus {
+    Running,
+    Zombie(i32)
+}
+
+#[derive(Debug, Clone)]
 pub struct FileDesc {
     pub position: usize,
     pub inode: usize,
@@ -71,6 +77,8 @@ pub struct Cage {
     pub cageid: u64,
     pub cwd: interface::RustLock<interface::RustRfc<interface::RustPathBuf>>,
     pub parent: u64,
+    pub childs: interface::RustLock<Vec<u64>>,
+    pub status: interface::RustLock<CageStatus>,
     pub filedescriptortable: FdTable,
     pub cancelstatus: interface::RustAtomicBool,
     pub getgid: interface::RustAtomicI32,

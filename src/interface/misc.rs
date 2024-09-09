@@ -94,19 +94,23 @@ pub fn cagetable_getref_opt(cageid: u64) -> Option<RustRfc<Cage>> {
 }
 
 pub fn cagetable_clear() {
-    let mut exitvec = Vec::new();
+    // let mut exitvec = Vec::new();
     unsafe {
-        for cage in CAGE_TABLE.iter_mut() {
-            let cageopt = cage.take();
-            if cageopt.is_some() {
-                exitvec.push(cageopt.unwrap());
+        for cageopt in CAGE_TABLE.iter_mut() {
+            if let Some(cage) = cageopt {
+                cage.exit_syscall(EXIT_SUCCESS);
             }
+            // let cageopt = cage.take();
+            // if cageopt.is_some() {
+            //     let cage = cageopt.unwrap();
+            //     exitvec.push(cage);
+            // }
         }
     }
 
-    for cage in exitvec {
-        cage.exit_syscall(EXIT_SUCCESS);
-    }
+    // for cage in exitvec {
+    //     cage.exit_syscall(EXIT_SUCCESS);
+    // }
 }
 
 pub fn log_from_ptr(buf: *const u8, length: usize) {
@@ -193,6 +197,7 @@ pub fn signalflag_get() -> u64 {
 }
 
 pub fn sigcheck() -> bool {
+    return false;
     if RUSTPOSIX_TESTSUITE.load(RustAtomicOrdering::Relaxed) {
         return false;
     }

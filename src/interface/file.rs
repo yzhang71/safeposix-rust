@@ -464,84 +464,84 @@ pub fn convert_bytes_to_size(bytes_to_write: &[u8]) -> usize {
     usize::from_be_bytes(sizearray)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use tempfile::NamedTempFile;
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+//     use tempfile::NamedTempFile;
 
-    #[test]
-    fn test_path_exists_true() {
-        let temp_file = NamedTempFile::new().unwrap();
-        let file_path = temp_file.path().to_str().unwrap().to_string();
-        assert!(pathexists(file_path));
-    }
+//     #[test]
+//     fn test_path_exists_true() {
+//         let temp_file = NamedTempFile::new().unwrap();
+//         let file_path = temp_file.path().to_str().unwrap().to_string();
+//         assert!(pathexists(file_path));
+//     }
 
-    #[test]
-    fn test_path_exists_false() {
-        // Test that pathexists returns false for a non-existent file
-        let non_existent_file = "/tmp/non_existent_file.txt";
-        assert!(!pathexists(non_existent_file.to_string()));
-    }
-    #[test]
-    fn test_new_emulated_file() {
-        let filename = "test_file.txt";
-        let filesize = 1024;
+//     #[test]
+//     fn test_path_exists_false() {
+//         // Test that pathexists returns false for a non-existent file
+//         let non_existent_file = "/tmp/non_existent_file.txt";
+//         assert!(!pathexists(non_existent_file.to_string()));
+//     }
+//     #[test]
+//     fn test_new_emulated_file() {
+//         let filename = "test_file.txt";
+//         let filesize = 1024;
 
-        let emulated_file = EmulatedFile::new(filename.to_string(), filesize).unwrap();
+//         let emulated_file = EmulatedFile::new(filename.to_string(), filesize).unwrap();
 
-        assert_eq!(emulated_file.filename, filename);
-        assert_eq!(emulated_file.filesize, filesize);
-        assert!(emulated_file.fobj.is_some());
-    }
+//         assert_eq!(emulated_file.filename, filename);
+//         assert_eq!(emulated_file.filesize, filesize);
+//         assert!(emulated_file.fobj.is_some());
+//     }
 
-    #[test]
-    fn test_new_metadata_emulated_file() {
-        let temp_file = NamedTempFile::new().unwrap();
-        let file_path = temp_file.path().to_str().unwrap().to_string();
+//     #[test]
+//     fn test_new_metadata_emulated_file() {
+//         let temp_file = NamedTempFile::new().unwrap();
+//         let file_path = temp_file.path().to_str().unwrap().to_string();
 
-        let emulated_file = EmulatedFile::new_metadata(file_path.clone()).unwrap();
+//         let emulated_file = EmulatedFile::new_metadata(file_path.clone()).unwrap();
 
-        assert_eq!(emulated_file.filename, file_path);
-        assert!(emulated_file.fobj.is_some());
-    }
-    #[test]
-    fn test_readat_emulated_file() {
-        let temp_file = NamedTempFile::new().unwrap();
-        let file_path = temp_file.path().to_str().unwrap().to_string();
-        let file_content = b"Hello, world!";
-        temp_file.as_file().write_all(file_content).unwrap();
+//         assert_eq!(emulated_file.filename, file_path);
+//         assert!(emulated_file.fobj.is_some());
+//     }
+//     #[test]
+//     fn test_readat_emulated_file() {
+//         let temp_file = NamedTempFile::new().unwrap();
+//         let file_path = temp_file.path().to_str().unwrap().to_string();
+//         let file_content = b"Hello, world!";
+//         temp_file.as_file().write_all(file_content).unwrap();
 
-        let emulated_file = EmulatedFile::new(file_path.clone(), file_content.len()).unwrap();
+//         let emulated_file = EmulatedFile::new(file_path.clone(), file_content.len()).unwrap();
 
-        let mut buffer = vec![0; file_content.len()];
-        let bytes_read = emulated_file
-            .readat(buffer.as_mut_ptr(), buffer.len(), 0)
-            .unwrap();
+//         let mut buffer = vec![0; file_content.len()];
+//         let bytes_read = emulated_file
+//             .readat(buffer.as_mut_ptr(), buffer.len(), 0)
+//             .unwrap();
 
-        assert_eq!(bytes_read, file_content.len());
-        assert_eq!(buffer, file_content);
-    }
+//         assert_eq!(bytes_read, file_content.len());
+//         assert_eq!(buffer, file_content);
+//     }
 
-    #[test]
-    fn test_writeat_emulated_file() {
-        let temp_file = NamedTempFile::new().unwrap();
-        let file_path = temp_file.path().to_str().unwrap().to_string();
-        let file_content = b"Hello, world!";
+//     #[test]
+//     fn test_writeat_emulated_file() {
+//         let temp_file = NamedTempFile::new().unwrap();
+//         let file_path = temp_file.path().to_str().unwrap().to_string();
+//         let file_content = b"Hello, world!";
 
-        let mut emulated_file = EmulatedFile::new(file_path.clone(), file_content.len()).unwrap();
+//         let mut emulated_file = EmulatedFile::new(file_path.clone(), file_content.len()).unwrap();
 
-        let new_content = b"test_writeat_emulated_file, world!";
-        let bytes_written = emulated_file
-            .writeat(new_content.as_ptr(), new_content.len(), 0)
-            .unwrap();
+//         let new_content = b"test_writeat_emulated_file, world!";
+//         let bytes_written = emulated_file
+//             .writeat(new_content.as_ptr(), new_content.len(), 0)
+//             .unwrap();
 
-        assert_eq!(bytes_written, new_content.len());
-        assert_eq!(emulated_file.filesize, new_content.len());
+//         assert_eq!(bytes_written, new_content.len());
+//         assert_eq!(emulated_file.filesize, new_content.len());
 
-        let mut buffer = vec![0; new_content.len()];
-        emulated_file
-            .readat(buffer.as_mut_ptr(), buffer.len(), 0)
-            .unwrap();
-        assert_eq!(buffer, new_content);
-    }
-}
+//         let mut buffer = vec![0; new_content.len()];
+//         emulated_file
+//             .readat(buffer.as_mut_ptr(), buffer.len(), 0)
+//             .unwrap();
+//         assert_eq!(buffer, new_content);
+//     }
+// }

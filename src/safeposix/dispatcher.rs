@@ -113,6 +113,7 @@ const SYNC_FILE_RANGE: i32 = 164;
 
 const WRITEV_SYSCALL: i32 = 170;
 
+const WAIT_SYSCALL: i32 = 180;
 
 use super::cage::*;
 use super::filesystem::{
@@ -456,6 +457,16 @@ pub extern "C" fn lind_syscall_api(
             }
         }
 
+        GETPID_SYSCALL => {
+            interface::check_cageid(cageid);
+            unsafe {
+                CAGE_TABLE[cageid as usize]
+                    .as_ref()
+                    .unwrap()
+                    .getpid_syscall()
+            }
+        }
+
         FORK_SYSCALL => {
             let id = arg1 as u64;
             interface::check_cageid(cageid);
@@ -464,6 +475,44 @@ pub extern "C" fn lind_syscall_api(
                     .as_ref()
                     .unwrap()
                     .fork_syscall(id)
+            }
+        }
+
+        WAIT_SYSCALL => {
+            let mut status = 0;
+            interface::check_cageid(cageid);
+            let ret = unsafe {
+                CAGE_TABLE[cageid as usize]
+                    .as_ref()
+                    .unwrap()
+                    .wait_syscall(&mut status)
+            };
+
+            let status_addr = (start_address + arg1) as *mut i32;
+            unsafe { *status_addr = status; }
+
+            ret
+        }
+
+        EXEC_SYSCALL => {
+            interface::check_cageid(cageid);
+            let child_cageid = arg1 as u64;
+            unsafe {
+                CAGE_TABLE[cageid as usize]
+                    .as_ref()
+                    .unwrap()
+                    .exec_syscall(child_cageid)
+            }
+        }
+
+        EXIT_SYSCALL => {
+            interface::check_cageid(cageid);
+            let status = arg1 as i32;
+            unsafe {
+                CAGE_TABLE[cageid as usize]
+                    .as_ref()
+                    .unwrap()
+                    .exit_syscall(status)
             }
         }
 
@@ -1381,6 +1430,8 @@ pub extern "C" fn lindrustinit(verbosity: isize) {
         cageid: 0,
         cwd: interface::RustLock::new(interface::RustRfc::new(interface::RustPathBuf::from("/"))),
         parent: 0,
+        childs: interface::RustLock::new(Vec::new()),
+        status: interface::RustLock::new(CageStatus::Running),
         filedescriptortable: init_fdtable(),
         cancelstatus: interface::RustAtomicBool::new(false),
         getgid: interface::RustAtomicI32::new(-1),
@@ -1406,6 +1457,8 @@ pub extern "C" fn lindrustinit(verbosity: isize) {
         cageid: 1,
         cwd: interface::RustLock::new(interface::RustRfc::new(interface::RustPathBuf::from("/"))),
         parent: 1,
+        childs: interface::RustLock::new(Vec::new()),
+        status: interface::RustLock::new(CageStatus::Running),
         filedescriptortable: init_fdtable(),
         cancelstatus: interface::RustAtomicBool::new(false),
         getgid: interface::RustAtomicI32::new(-1),

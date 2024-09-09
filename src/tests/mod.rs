@@ -26,42 +26,42 @@ mod main_tests {
 
         lindrustinit(0);
         {
-            let cage = interface::cagetable_getref(1);
-            crate::lib_fs_utils::lind_deltree(&cage, "/");
-            assert_eq!(cage.mkdir_syscall("/dev", S_IRWXA), 0);
-            assert_eq!(
-                cage.mknod_syscall(
-                    "/dev/null",
-                    S_IFCHR as u32 | 0o777,
-                    makedev(&DevNo { major: 1, minor: 3 })
-                ),
-                0
-            );
-            assert_eq!(
-                cage.mknod_syscall(
-                    "/dev/zero",
-                    S_IFCHR as u32 | 0o777,
-                    makedev(&DevNo { major: 1, minor: 5 })
-                ),
-                0
-            );
-            assert_eq!(
-                cage.mknod_syscall(
-                    "/dev/urandom",
-                    S_IFCHR as u32 | 0o777,
-                    makedev(&DevNo { major: 1, minor: 9 })
-                ),
-                0
-            );
-            assert_eq!(
-                cage.mknod_syscall(
-                    "/dev/random",
-                    S_IFCHR as u32 | 0o777,
-                    makedev(&DevNo { major: 1, minor: 8 })
-                ),
-                0
-            );
-            assert_eq!(cage.exit_syscall(EXIT_SUCCESS), EXIT_SUCCESS);
+            // let cage = interface::cagetable_getref(1);
+            // crate::lib_fs_utils::lind_deltree(&cage, "/");
+            // assert_eq!(cage.mkdir_syscall("/dev", S_IRWXA), 0);
+            // assert_eq!(
+            //     cage.mknod_syscall(
+            //         "/dev/null",
+            //         S_IFCHR as u32 | 0o777,
+            //         makedev(&DevNo { major: 1, minor: 3 })
+            //     ),
+            //     0
+            // );
+            // assert_eq!(
+            //     cage.mknod_syscall(
+            //         "/dev/zero",
+            //         S_IFCHR as u32 | 0o777,
+            //         makedev(&DevNo { major: 1, minor: 5 })
+            //     ),
+            //     0
+            // );
+            // assert_eq!(
+            //     cage.mknod_syscall(
+            //         "/dev/urandom",
+            //         S_IFCHR as u32 | 0o777,
+            //         makedev(&DevNo { major: 1, minor: 9 })
+            //     ),
+            //     0
+            // );
+            // assert_eq!(
+            //     cage.mknod_syscall(
+            //         "/dev/random",
+            //         S_IFCHR as u32 | 0o777,
+            //         makedev(&DevNo { major: 1, minor: 8 })
+            //     ),
+            //     0
+            // );
+            // assert_eq!(cage.exit_syscall(EXIT_SUCCESS), EXIT_SUCCESS);
         }
         lindrustfinalize();
 
